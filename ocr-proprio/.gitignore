@@ -1,0 +1,10 @@
+__pycache__/
+*.pyc
+dados/para_rotular/*
+!dados/para_rotular/.gitkeep
+dados/rotulado/*
+!dados/rotulado/.gitkeep
+saida/
+exemplos/
+modelos/*.pt
+.pytest_cache/

@@ -1,0 +1,6 @@
+numpy>=1.26
+opencv-python-headless>=4.8
+pillow>=10.0
+pymupdf>=1.23
+torch>=2.1
+pytesseract>=0.3.10   # opcional: só para comparar no diagnóstico
