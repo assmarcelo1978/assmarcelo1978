@@ -66,6 +66,11 @@ class Misto(IterableDataset):
             yield x, alvo, txt
 
 
+def _init_worker(_):
+    cv2.setNumThreads(1)
+    torch.set_num_threads(1)
+
+
 class LotesPorLargura(IterableDataset):
     """Junta exemplos de largura parecida no mesmo lote: menos preenchimento vazio = treino ~2x mais rápido."""
 
@@ -152,8 +157,10 @@ def treinar(pasta_fontes="fontes", pasta_rotulado="dados/rotulado", saida="model
     otim = torch.optim.AdamW(modelo.parameters(), lr=lr, weight_decay=1e-4)
     sched = torch.optim.lr_scheduler.OneCycleLR(otim, max_lr=lr, total_steps=passos, pct_start=0.1)
     ctc = nn.CTCLoss(blank=0, zero_infinity=True)
-    workers = workers if workers is not None else max(0, min(2, (os.cpu_count() or 1) // 2))
-    loader = DataLoader(LotesPorLargura(Misto(fontes, reais_tr, prop_real, extra), lote), batch_size=None, num_workers=workers)
+    # em máquinas com poucos núcleos, processos extras de dados mais atrapalham do que ajudam
+    workers = workers if workers is not None else (0 if (os.cpu_count() or 1) <= 4 else 2)
+    loader = DataLoader(LotesPorLargura(Misto(fontes, reais_tr, prop_real, extra), lote), batch_size=None,
+                        num_workers=workers, worker_init_fn=_init_worker if workers else None)
     torch.set_num_threads(max(1, (os.cpu_count() or 2) - workers))
 
     melhor = float("inf")
@@ -172,6 +179,8 @@ def treinar(pasta_fontes="fontes", pasta_rotulado="dados/rotulado", saida="model
         otim.step()
         sched.step()
         perda_media = 0.98 * perda_media + 0.02 * perda.item() if passo > 1 else perda.item()
+        if passo % 50 == 0 and passo % avaliar_cada:
+            log(f"passo {passo}/{passos}  perda {perda_media:.3f}  ({time.time()-t0:.0f}s)")
         if passo % avaliar_cada == 0 or passo == passos:
             c, ex = avaliar(modelo, val_loader, disp)
             log(f"passo {passo}/{passos}  perda {perda_media:.3f}  CER {c*100:.2f}%  linhas exatas {ex*100:.1f}%  ({time.time()-t0:.0f}s)")
