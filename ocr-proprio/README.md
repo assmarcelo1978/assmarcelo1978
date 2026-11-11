@@ -26,6 +26,20 @@ comum para a menos comum:
 > correção é feita de forma barata e verificável: pré-processamento, um modelo
 > especializado e regras de validação dos próprios documentos brasileiros.
 
+### Teste medido (conta de luz fotografada torta, com sombra, borrada e comprimida em JPEG)
+
+| Motor | Erro por caractere | Resultado |
+|---|---|---|
+| Tesseract "cru" (como costuma ser usado) | **12,1%** | pulou linhas inteiras e cortou o código de barras |
+| Tesseract + o pré-processamento deste projeto | **0,36%** | todos os campos certos |
+| OCR próprio, só 50 min de treino em CPU fraca, com fontes genéricas e **sem nenhum recorte real** | **0,90%** | todos os campos certos; errou só pontuação (`:` virou `.`) |
+| Os dois juntos (padrão do `ler`) | — | os 5 trechos em que discordaram ficaram marcados como duvidosos |
+
+Conclusão: **a maior parte do erro vinha da imagem chegar ao OCR sem
+tratamento**. O modelo próprio acerta mais quando é treinado com as fontes
+reais e uns 200 recortes reais corrigidos. Os trechos em que os dois motores
+discordam são exatamente os que vale a pena corrigir e devolver ao treino.
+
 Para ver o diagnóstico de **um documento seu**:
 
 ```bash
@@ -142,6 +156,10 @@ Exemplo de saída:
 }
 ```
 
+* O `ler` usa o modelo próprio e, se o Tesseract estiver instalado, confere
+  cada trecho com ele (segunda opinião). Trechos em que os dois discordam vão
+  para `trechos_duvidosos` com as duas leituras. Para desligar, use
+  `--sem-tesseract`.
 * `confiavel: true`: todas as validações fecharam.
 * `confiavel: false`: veja `alertas` e `trechos_duvidosos`. São os únicos
   pontos que precisam de olho humano (ou, se preferir, só eles vão para a IA,

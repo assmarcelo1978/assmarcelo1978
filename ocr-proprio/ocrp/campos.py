@@ -148,6 +148,9 @@ def extrair(texto: str) -> dict:
 
     # ---- verificações cruzadas
     ld = c.get("linha_digitavel")
+    parece_conta = "total" in c or "vencimento" in c
+    if parece_conta and not ld:
+        res["alertas"].append("Parece conta/boleto mas não achei a linha digitável completa: o OCR pode ter cortado ou pulado texto.")
     if ld and not ld["valido"]:
         res["alertas"].append("Linha digitável com dígito verificador errado: algum número foi mal lido.")
     if ld and ld["valido"] and "total" in c and ld.get("valor") and abs(ld["valor"] - c["total"]["valor"]) > 0.005:

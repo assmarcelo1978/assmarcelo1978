@@ -49,6 +49,7 @@ def main(argv=None):
     s.add_argument("--modelo", default=MODELO_PADRAO)
     s.add_argument("--forcar-ocr", action="store_true", help="faz OCR mesmo em PDF com texto")
     s.add_argument("--so-texto", action="store_true")
+    s.add_argument("--sem-tesseract", action="store_true", help="não usa o Tesseract como segunda opinião")
 
     s = sub.add_parser("diagnosticar")
     s.add_argument("arquivos", nargs="+")
@@ -78,7 +79,7 @@ def main(argv=None):
     elif a.cmd == "ler":
         from .ler import ler_documento
         for f in a.arquivos:
-            r = ler_documento(f, a.modelo, a.forcar_ocr)
+            r = ler_documento(f, a.modelo, a.forcar_ocr, not a.sem_tesseract)
             print(r["texto"]) if a.so_texto else dump(r)
     elif a.cmd == "diagnosticar":
         from .diagnostico import diagnosticar_arquivo
